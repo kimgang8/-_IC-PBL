@@ -1,0 +1,44 @@
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import GridSearchCV
+
+# 데이터셋 로드
+normal_data = pd.read_csv('normal.csv')  # 정상 모터 데이터
+abnormal_data = pd.read_csv('abnormal.csv')  # 불량품 모터 데이터
+
+# 데이터셋 병합
+combined_data = pd.concat([normal_data, abnormal_data], ignore_index=True)
+
+# 피처(X)와 타겟(y) 분리
+X = combined_data.drop('class', axis=1)
+y = combined_data['class']
+
+# 모터 ID를 기준으로 훈련 데이터와 테스트 데이터 분리
+X_train = X[X['motor_id'].between(1, 36)]
+y_train = y[X['motor_id'].between(1, 36)]
+X_test = X[X['motor_id'].between(37, 48)]
+y_test = y[X['motor_id'].between(37, 48)]
+
+# 데이터 정규화
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# 결정나무 모델 초기화
+model = DecisionTreeClassifier()
+
+# 하이퍼파라미터 그리드 설정
+param_grid = {
+    'max_depth': [None, 10, 20, 30, 40, 50],
+    'min_samples_split': [2, 5, 10, 15, 20],
+    'min_samples_leaf': [1, 2, 5, 10]
+}
+
+# 그리드 서치 초기화 및 실행
+grid_search = GridSearchCV(model, param_grid, cv=5, scoring='accuracy', verbose=1)
+grid_search.fit(X_train_scaled, y_train)
+
+# 최적의 파라미터와 점수 출력
+print('Best parameters:', grid_search.best_params_)
+print('Best score:', grid_search.best_score_)

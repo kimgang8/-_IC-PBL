@@ -1,0 +1,35 @@
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import classification_report, confusion_matrix
+
+# 데이터셋 로드
+normal_data = pd.read_csv('normal.csv')  # 정상 모터 데이터
+abnormal_data = pd.read_csv('abnormal.csv')  # 불량품 모터 데이터
+
+# 데이터셋 병합
+combined_data = pd.concat([normal_data, abnormal_data], ignore_index=True)
+
+# 피처(X)와 타겟(y) 분리
+X = combined_data.drop('class', axis=1)
+y = combined_data['class']
+
+# 모터 ID를 기준으로 훈련 데이터와 테스트 데이터 분리
+X_train = X[X['motor_id'].between(1, 36)]
+y_train = y[X['motor_id'].between(1, 36)]
+X_test = X[X['motor_id'].between(37, 48)]
+y_test = y[X['motor_id'].between(37, 48)]
+
+# 데이터 정규화
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# 결정나무 모델 초기화 및 훈련
+model = DecisionTreeClassifier()
+model.fit(X_train_scaled, y_train)
+
+# 테스트 데이터에 대한 예측 수행 및 평가
+y_pred = model.predict(X_test_scaled)
+print(classification_report(y_test, y_pred))
+print(confusion_matrix(y_test, y_pred))
